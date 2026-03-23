@@ -342,6 +342,51 @@
       letter-spacing: -0.01em;
     }
 
+    /* ── Empty state ── */
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    #empty-state .empty-logo {
+      width: 64px; height: 64px; border-radius: 20px;
+      background: rgba(16,163,127,0.1); border: 1px solid rgba(16,163,127,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(16,163,127,0.12);
+    }
+    #empty-state h2 {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+      margin-bottom: 8px; color: var(--foreground);
+    }
+    #empty-state p {
+      font-size: 15px; color: var(--muted-foreground); margin-bottom: 32px; font-weight: 500;
+    }
+    .suggestions {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 10px; max-width: 560px; width: 100%;
+    }
+    .suggestion-btn {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      font-size: 13.5px; font-weight: 600; color: var(--foreground);
+      cursor: pointer; text-align: start; line-height: 1.4;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .suggestion-btn:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,163,127,0.1); }
+    .suggestion-btn:active { transform: scale(0.98); }
+    @media (max-width: 600px) { .suggestions { grid-template-columns: 1fr; } }
+
+    /* RTL support for Arabic */
+    .bubble.rtl { direction: rtl; text-align: right; }
+
     /* Tool-use pill */
     .tool-pill {
       display: inline-flex;
@@ -386,7 +431,19 @@
   </header>
 
   <div class="chat-wrapper">
-    <main id="chat-container"></main>
+    <main id="chat-container">
+      <div id="empty-state">
+        <div class="empty-logo">🎓</div>
+        <h2>How can I help you today?</h2>
+        <p>Ask anything about Yarmouk University — in Arabic or English</p>
+        <div class="suggestions">
+          <button class="suggestion-btn">📅 What are the important dates this semester?</button>
+          <button class="suggestion-btn">📚 What majors does Yarmouk offer?</button>
+          <button class="suggestion-btn">🏛️ How do I apply for admission?</button>
+          <button class="suggestion-btn">📍 What services does the library provide?</button>
+        </div>
+      </div>
+    </main>
     
     <footer>
       <div class="input-container">
@@ -442,12 +499,14 @@
         return;
       }
 
+      const labels = JSON.parse(localStorage.getItem('chat_labels') || '{}');
       localThreads.forEach(id => {
         const item = document.createElement('div');
         item.className = 'history-item' + (id === threadId ? ' active' : '');
+        const label = labels[id] || 'New conversation';
         item.innerHTML = `
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          ${id.replace('th_', '').slice(0, 20)}
+          ${escapeHtml(label.slice(0, 40))}
         `;
         item.onclick = () => switchThread(id);
         historyList.appendChild(item);
@@ -456,6 +515,17 @@
       console.error('History failed', e);
     }
   }
+
+  function attachSuggestions() {
+    document.querySelectorAll('.suggestion-btn').forEach(btn => {
+      btn.onclick = () => {
+        input.value = btn.textContent.replace(/^[^\w\u0600-\u06FF]+/, '').trim();
+        input.dispatchEvent(new Event('input'));
+        form.requestSubmit();
+      };
+    });
+  }
+  attachSuggestions();
 
   async function switchThread(id) {
     if (isReceiving) return;
@@ -474,7 +544,15 @@
     } catch (e) {}
   }
 
+  function isRTL(text) {
+    return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(text);
+  }
+
   function appendRow(role, text) {
+    // Hide empty state on first message
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.remove();
+
     const row = document.createElement('div');
     row.className = 'msg-row ' + (role.includes('human') || role === 'user' ? 'user' : 'ai');
     const content = document.createElement('div');
@@ -483,7 +561,8 @@
     avatar.className = 'avatar';
     avatar.textContent = (role.includes('human') || role === 'user') ? 'U' : 'AI';
     const bubble = document.createElement('div');
-    bubble.className = 'bubble';
+    const rtl = isRTL(text);
+    bubble.className = 'bubble' + (rtl ? ' rtl' : '');
     bubble.innerHTML = (role.includes('human') || role === 'user') ? escapeHtml(text) : marked.parse(text);
     content.appendChild(avatar);
     content.appendChild(bubble);
@@ -562,6 +641,21 @@
   newChatBtn.onclick = () => {
     threadId = newThreadId();
     container.innerHTML = '';
+    // Restore empty state
+    const es = document.createElement('div');
+    es.id = 'empty-state';
+    es.innerHTML = `
+      <div class="empty-logo">🎓</div>
+      <h2>How can I help you today?</h2>
+      <p>Ask anything about Yarmouk University — in Arabic or English</p>
+      <div class="suggestions">
+        <button class="suggestion-btn">📅 What are the important dates this semester?</button>
+        <button class="suggestion-btn">📚 What majors does Yarmouk offer?</button>
+        <button class="suggestion-btn">🏛️ How do I apply for admission?</button>
+        <button class="suggestion-btn">📍 What services does the library provide?</button>
+      </div>`;
+    container.appendChild(es);
+    attachSuggestions();
     loadHistory();
   };
 
@@ -572,6 +666,12 @@
     if (!q) return;
     input.value = '';
     input.style.height = 'auto';
+    // Save first message as the conversation label
+    const labels = JSON.parse(localStorage.getItem('chat_labels') || '{}');
+    if (!labels[threadId]) {
+      labels[threadId] = q;
+      localStorage.setItem('chat_labels', JSON.stringify(labels));
+    }
     appendRow('user', q);
     isReceiving = true;
     sendBtn.disabled = true;
