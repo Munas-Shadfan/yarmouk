@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YU Student Portal — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary: #10a37f;
+      --primary-foreground: #ffffff;
+      --background: #f5f5f7;
+      --foreground: #1d1d1f;
+      --card: #ffffff;
+      --card-foreground: #1d1d1f;
+      --muted: #e9e9eb;
+      --muted-foreground: #86868b;
+      --border: rgba(0,0,0,0.08);
+      --radius-md: 10px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 12px 32px rgba(0,0,0,0.08);
+      --glass: saturate(180%) blur(20px);
+      --sidebar: #1d1d1f;
+      --sidebar-text: #86868b;
+    }
+    [data-theme="dark"] {
+      --background: #000000;
+      --foreground: #f5f5f7;
+      --card: #1c1c1e;
+      --card-foreground: #f5f5f7;
+      --muted: #2c2c2e;
+      --muted-foreground: #86868b;
+      --border: rgba(255,255,255,0.1);
+      --shadow-md: 0 12px 48px rgba(0,0,0,0.5);
+      --sidebar: #0a0a0a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --background: #000000; --foreground: #f5f5f7; --card: #1c1c1e; --card-foreground: #f5f5f7; --muted: #2c2c2e; --muted-foreground: #86868b; --border: rgba(255,255,255,0.1); --shadow-md: 0 12px 48px rgba(0,0,0,0.5); --sidebar: #0a0a0a;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+      background: var(--background); color: var(--foreground);
+      display: flex; height: 100vh; overflow: hidden;
+      transition: background 0.3s;
+      -webkit-font-smoothing: antialiased;
+    }
+
+
+
+    /* ── LEFT NAV ── */
+    .portal-nav {
+      width: 240px; background: var(--sidebar); flex-shrink: 0;
+      display: flex; flex-direction: column;
+      padding-top: 0;
+    }
+    .portal-brand {
+      padding: 24px 20px;
+      font-size: 16px; font-weight: 800; color: #fff;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      letter-spacing: -0.01em;
+    }
+    .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+    .nav-section { padding: 20px 20px 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.3); }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; margin: 2px 12px;
+      border-radius: 10px; font-size: 14px; color: var(--sidebar-text);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .nav-item.active { background: rgba(16,163,127,0.15); color: var(--primary); font-weight: 700; }
+    .nav-item svg { flex-shrink: 0; opacity: .7; }
+    .nav-item.active svg { opacity: 1; }
+    .nav-badge {
+      margin-left: auto; background: var(--primary);
+      color: #fff; font-size: 10px; font-weight: 800;
+      padding: 2px 8px; border-radius: 12px;
+    }
+
+    /* ── MAIN AREA ── */
+    .portal-main {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      padding-top: 0;
+    }
+    .topbar {
+      height: 64px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 32px; gap: 16px;
+      background: rgba(var(--nav-bg-rgb, 255,255,255), 0.72);
+      backdrop-filter: var(--glass); -webkit-backdrop-filter: var(--glass);
+      flex-shrink: 0; transition: background 0.3s;
+    }
+    [data-theme="dark"] .topbar { --nav-bg-rgb: 0,0,0; }
+    [data-theme="light"] .topbar { --nav-bg-rgb: 255,255,255; }
+    
+    .topbar-title { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    
+    .theme-toggle {
+      background: none; border: none; cursor: pointer; color: var(--muted-foreground);
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px; border-radius: 50%; transition: background 0.2s;
+    }
+    .theme-toggle:hover { background: var(--border); color: var(--foreground); }
+    .hidden { display: none !important; }
+
+    .copilot-toggle-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 10px;
+      background: rgba(16,163,127,.1); border: 1px solid rgba(16,163,127,.25);
+      font-size: 14px; font-weight: 700; color: var(--primary); cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .copilot-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .content-area { flex: 1; overflow-y: auto; padding: 32px; display: flex; flex-direction: column; gap: 32px; }
+    .greeting h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+    .greeting p  { font-size: 15px; color: var(--muted-foreground); margin-top: 6px; font-weight: 500; }
+
+    .stat-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; }
+    .stat-tile { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm); }
+    .stat-tile .label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); margin-bottom: 8px; }
+    .stat-tile .value { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
+    .stat-tile .sub { margin-top: 8px; }
+    .chip { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+    .chip.green { background: rgba(16,163,127,.1); color: var(--primary); }
+    .chip.orange{ background: rgba(245,158,11,.1); color: #d97706; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .content-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm); }
+    .content-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 20px; }
+    .schedule-item { display: flex; gap: 16px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .schedule-item:last-child { border-bottom: none; }
+    .sched-time { font-size: 12px; color: var(--muted-foreground); font-weight: 700; width: 80px; flex-shrink: 0; }
+    .sched-info h4 { font-size: 14px; font-weight: 700; }
+    .sched-info p  { font-size: 12.5px; color: var(--muted-foreground); margin-top: 3px; }
+
+    /* ── COPILOT PANEL ── */
+    .copilot-panel {
+      width: 0; overflow: hidden; flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      background: var(--background);
+      display: flex; flex-direction: column;
+      transition: width .3s cubic-bezier(.4, 0, .2, 1);
+    }
+    .copilot-panel.open { width: 340px; }
+
+    .cp-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .cp-icon {
+      width: 32px; height: 32px; border-radius: 10px;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .cp-title { font-size: 14px; font-weight: 800; }
+    .cp-sub   { font-size: 11px; color: var(--muted-foreground); }
+    .cp-close { margin-left: auto; background: transparent; border: none; color: var(--muted-foreground); cursor: pointer; padding: 6px; border-radius: 8px; }
+    .cp-close:hover { background: var(--border); color: var(--foreground); }
+
+    .ctx-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .ctx-chip { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: var(--card); border: 1px solid var(--border); color: var(--muted-foreground); }
+    .ctx-chip.on { border-color: var(--primary); color: var(--primary); background: rgba(16,163,127,0.06); }
+
+    .cp-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .cp-msg { display: flex; gap: 8px; align-items: flex-end; }
+    .cp-msg.user { flex-direction: row-reverse; }
+    .cp-av { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .cp-av.ai  { background: var(--primary); color: #fff; }
+    .cp-av.usr { background: var(--foreground); color: var(--background); }
+    .cp-bubble { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; }
+    .cp-msg.ai   .cp-bubble { background: var(--card); color: var(--foreground); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+    .cp-msg.user .cp-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 3px; }
+
+    .cp-input-row { border-top: 1px solid var(--border); padding: 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .cp-input { flex: 1; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 13px; background: var(--card); color: var(--foreground); outline: none; transition: border-color 0.2s; }
+    .cp-input:focus { border-color: var(--primary); }
+    .cp-send { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; }
+
+    /* ── MOBILE RESPONSIVENESS ── */
+    @media (max-width: 900px) {
+      .portal-nav { position: fixed; left: -240px; top: 0; bottom: 0; transition: transform 0.3s; z-index: 100; box-shadow: 20px 0 60px rgba(0,0,0,0.2); }
+      .portal-nav.open { transform: translateX(240px); }
+      .portal-main { width: 100%; }
+      .topbar { padding: 0 16px 0 60px; }
+      .stat-strip { grid-template-columns: repeat(2, 1fr); }
+      .copilot-panel.open { position: fixed; inset: 0; width: 100% !important; z-index: 110; border-left: none; }
+      #portal-menu-toggle { display: block !important; }
+      .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; display: none; }
+      .sidebar-overlay.open { display: block; }
+    }
+    @media (max-width: 500px) {
+      .stat-strip { grid-template-columns: 1fr; }
+      .greeting h2 { font-size: 24px; }
+      .topbar-title { font-size: 15px; }
+    }
+    #portal-menu-toggle {
+        display: none; position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; cursor: pointer; color: var(--foreground);
+    }
+    .cp-close { font-size: 24px; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+
+
+<nav class="portal-nav">
+  <div class="portal-brand"><div class="brand-dot"></div>YU Portal</div>
+  <div class="nav-section">Main</div>
+  <div class="nav-item active"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</div>
+  <div class="nav-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Courses <span class="nav-badge">6</span></div>
+  <div class="nav-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Grades</div>
+  <div class="nav-section">Services</div>
+  <div class="nav-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</div>
+</nav>
+
+<div class="portal-main">
+  <div class="topbar">
+    <button id="portal-menu-toggle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <div class="topbar-title">Dashboard Overview</div>
+    <div class="topbar-right">
+      <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+        <svg id="sun-icon" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="copilot-toggle-btn active" id="toggle-btn" onclick="toggleCopilot()">AI Copilot</button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div class="greeting"><h2>Good afternoon, Ahmad 👋</h2><p>Here's your academic progress for Spring Semester 2026.</p></div>
+    <div class="stat-strip">
+        <div class="stat-tile"><div class="label">GPA</div><div class="value">3.42</div><div class="sub"><span class="chip green">↑ +0.08</span></div></div>
+        <div class="stat-tile"><div class="label">Credits</div><div class="value">87 / 132</div></div>
+        <div class="stat-tile"><div class="label">Attendance</div><div class="value">94%</div></div>
+        <div class="stat-tile"><div class="label">Tasks</div><div class="value">3</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="copilot-panel open" id="copilot-panel">
+  <div class="cp-header">
+    <div class="cp-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <div><div class="cp-title">AI Copilot</div><div class="cp-sub">Connected to Portal Context</div></div>
+    <button class="cp-close" onclick="toggleCopilot()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="ctx-bar"><span class="ctx-chip on">Dashboard</span><span class="ctx-chip">Grades</span></div>
+  <div class="cp-messages" id="cp-msgs">
+    <div class="cp-msg ai"><div class="cp-av ai">AI</div><div class="cp-bubble">Hi Ahmad! I'm here to help with your studies. You have 3 pending tasks. Want to review them?</div></div>
+    <div id="cp-typing" style="display:none" class="cp-msg ai"><div class="cp-av ai">AI</div><div class="cp-bubble" id="cp-ai-bubble"></div></div>
+  </div>
+  <div class="cp-input-row">
+    <input class="cp-input" id="cp-input" type="text" placeholder="Ask your copilot…" />
+    <button class="cp-send" id="cp-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+  </div>
+</div>
+
+<script>
+marked.setOptions({ breaks: true, gfm: true });
+const THREAD = 'demo_copilot_' + Math.floor(Date.now() / 60000);
+let isReceiving = false;
+
+function toggleCopilot() {
+  const panel = document.getElementById('copilot-panel');
+  const btn = document.getElementById('toggle-btn');
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+}
+
+async function sendCopilot() {
+  if (isReceiving) return;
+  const input = document.getElementById('cp-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  
+  const msgs = document.getElementById('cp-msgs');
+  const typing = document.getElementById('cp-typing');
+  const usrEl = document.createElement('div');
+  usrEl.className = 'cp-msg user';
+  usrEl.innerHTML = `<div class="cp-av usr">U</div><div class="cp-bubble">${q}</div>`;
+  msgs.insertBefore(usrEl, typing);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  isReceiving = true;
+  typing.style.display = 'flex';
+  const bubbleEl = document.getElementById('cp-ai-bubble');
+  bubbleEl.textContent = 'Thinking…';
+
+  let rawText = '';
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, thread_id: THREAD })
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunks = decoder.decode(value).split('\n\n');
+      for (const chunk of chunks) {
+          if (!chunk.startsWith('data: ')) continue;
+          const ev = JSON.parse(chunk.slice(6));
+          if (ev.type === 'token') {
+              rawText += ev.text;
+              bubbleEl.innerHTML = marked.parse(rawText);
+              msgs.scrollTop = msgs.scrollHeight;
+          }
+      }
+    }
+  } catch(e) {}
+  
+  const perm = document.createElement('div');
+  perm.className = 'cp-msg ai';
+  perm.innerHTML = `<div class="cp-av ai">AI</div><div class="cp-bubble">${bubbleEl.innerHTML}</div>`;
+  msgs.insertBefore(perm, typing);
+  typing.style.display = 'none';
+  isReceiving = false;
+}
+
+document.getElementById('cp-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendCopilot(); });
+document.getElementById('cp-send').onclick = sendCopilot;
+
+const toggleBtn = document.getElementById('theme-toggle');
+const moonIcon = document.getElementById('moon-icon');
+const sunIcon = document.getElementById('sun-icon');
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  if (theme === 'dark') { moonIcon.classList.add('hidden'); sunIcon.classList.remove('hidden'); }
+  else { sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); }
+}
+const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(savedTheme);
+toggleBtn.onclick = () => { setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); };
+
+const menuBtn = document.getElementById('portal-menu-toggle');
+const sideNav = document.querySelector('.portal-nav');
+const overlay = document.getElementById('sidebar-overlay');
+function toggleSideNav() { sideNav.classList.toggle('open'); overlay.classList.toggle('open'); }
+if (menuBtn) menuBtn.onclick = toggleSideNav;
+if (overlay) overlay.onclick = toggleSideNav;
+</script>
+</body>
+</html>

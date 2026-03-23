@@ -1,0 +1,162 @@
+{
+  "skill_name": "design-system",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add status badges to the journal entry list — Draft, Posted, and Canceled states. We're using Angular.",
+      "expected_output": "Provides the exact inline HTML badge pattern with correct color tokens, dot indicator, ring, and text-[11px] font-semibold. Explains why color alone is insufficient (accessibility).",
+      "assertions": [
+        "Provides HTML with rounded-full badge anatomy",
+        "Uses bg-cyan-50 text-cyan-700 for Posted state",
+        "Uses bg-zinc-100 text-zinc-600 for Draft state",
+        "Uses bg-red-50 text-red-700 for Canceled state",
+        "Includes the dot indicator (size-1.5 rounded-full)",
+        "Uses text-[11px] font-semibold",
+        "Includes ring-1 ring-inset for subtle border",
+        "Does not use raw hex colors",
+        "Mentions color-alone accessibility concern"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Building a Next.js dashboard. I need a row of 4 KPI stat cards for revenue, expenses, net profit, and outstanding invoices.",
+      "expected_output": "Provides a grid layout with 4 stat cards using bg-card, rounded-2xl, border-border, shadow-sm, p-6. Label uses uppercase tracking-widest. Value uses font-mono tabular-nums. Trend uses emerald/red.",
+      "assertions": [
+        "Uses rounded-2xl for cards (not rounded-lg)",
+        "Uses bg-card not bg-white",
+        "Uses font-mono tabular-nums for number values",
+        "Label uses text-xs font-bold uppercase tracking-widest text-muted-foreground",
+        "Uses text-emerald-500 for positive trend",
+        "No raw hex colors",
+        "Uses CSS grid for layout",
+        "Provides TSX code"
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm creating a 'New Supplier' form page in Angular. What's the right layout?",
+      "expected_output": "Shows page header with back button + title, form grid, z-input for text, z-select for dropdowns, single primary z-button for submit, outline for cancel. Mentions OnPush, signals, standalone.",
+      "assertions": [
+        "Shows page header with back arrow-left button",
+        "Uses z-input for text fields",
+        "Uses z-select for dropdowns",
+        "Uses z-button zType='default' for submit (only one primary)",
+        "Uses z-button zType='outline' for cancel",
+        "Mentions standalone: true and ChangeDetectionStrategy.OnPush",
+        "Uses toast for feedback after submit"
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Review this component:\n```html\n<div style=\"background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 24px;\">\n  <h2 style=\"font-size: 18px;\">Total Revenue</h2>\n  <p style=\"font-size: 24px; color: #06B6D4;\">$12,450</p>\n  <button class=\"bg-cyan-500 text-white rounded-lg\">View</button>\n</div>\n```",
+      "expected_output": "Identifies all violations: inline styles, raw hex, rounded-lg on card, bg-cyan-500, missing font-mono tabular-nums. Provides corrected version.",
+      "assertions": [
+        "Flags inline style attributes",
+        "Flags #fff — should be bg-card",
+        "Flags border-radius: 12px — should be rounded-2xl",
+        "Flags #06B6D4 — should be text-primary",
+        "Flags bg-cyan-500 — should be bg-primary",
+        "Flags rounded-lg — should be rounded-2xl for a card",
+        "Flags missing font-mono tabular-nums",
+        "Provides a corrected version"
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "How do I handle loading state for a list of journal entries in Next.js?",
+      "expected_output": "Shows Skeleton component from shadcn/ui mirroring table layout. Multiple skeleton rows/columns. No spinner alone. TSX code.",
+      "assertions": [
+        "Uses Skeleton from @/components/ui/skeleton",
+        "Skeletons mirror the table layout (multiple rows/columns)",
+        "Does not show empty state during loading",
+        "Shows actual content when loading is false",
+        "Provides TSX code",
+        "Does not use a spinner as only loading indicator"
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "I want to build a premium landing page hero section for our SaaS product in Next.js. Make it look Apple-quality.",
+      "expected_output": "Does NOT use centered text over dark image. Uses split-screen or asymmetric layout. Includes scroll entry animation with Framer Motion. Uses spring physics. Uses semantic tokens. Provides responsive mobile collapse.",
+      "assertions": [
+        "Does NOT use centered hero layout",
+        "Uses asymmetric, split-screen, or editorial layout",
+        "Includes Framer Motion for entry animation",
+        "Uses spring physics (not linear easing)",
+        "Uses semantic tokens (bg-background, text-foreground)",
+        "Includes mobile responsive collapse (w-full below md)",
+        "Uses min-h-[100dvh] not h-screen",
+        "No raw hex colors or bg-white"
+      ],
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "This dashboard looks generic and AI-generated. Help me make it look premium.\n\nIt has: centered title, 3 equal stat cards in a row, Inter font, bg-white everywhere, basic shadows, no animations.",
+      "expected_output": "Identifies all anti-patterns. Recommends font swap, bento grid instead of 3-card row, semantic tokens instead of bg-white, tinted shadows, entry animations. Follows redesign audit priority order.",
+      "assertions": [
+        "Identifies centered layout as generic",
+        "Identifies 3-equal-card row as AI pattern",
+        "Recommends font swap from Inter",
+        "Replaces bg-white with bg-card or bg-background",
+        "Recommends bento/asymmetric grid",
+        "Adds hover and active states",
+        "Adds entry animations",
+        "Follows priority order: font → color → hover → layout → components → states → polish"
+      ],
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Build me a glass-effect card component with a hover animation for Angular.",
+      "expected_output": "Uses backdrop-blur with inner border and inner shadow for real glassmorphism. Uses CSS transitions with cubic-bezier. Includes hover scale/translate. Uses semantic tokens. Angular standalone component with OnPush.",
+      "assertions": [
+        "Uses backdrop-blur for glass effect",
+        "Includes border-white/10 inner border",
+        "Includes inner shadow for refraction simulation",
+        "Uses cubic-bezier transition (not linear)",
+        "Hover includes scale or translate effect",
+        "Uses semantic tokens for colors",
+        "Angular standalone component with OnPush",
+        "Does not apply backdrop-blur to scrolling container"
+      ],
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "I need an empty state for when there are no invoices yet. Next.js with shadcn.",
+      "expected_output": "Composed empty state with icon, headline, description, and CTA button. Not just blank space. Uses semantic tokens. Realistic copy (no 'Oops!').",
+      "assertions": [
+        "Includes an icon or illustration",
+        "Includes headline text explaining the empty state",
+        "Includes description with guidance on next steps",
+        "Includes a CTA button to create first invoice",
+        "Uses semantic tokens (text-muted-foreground, bg-muted)",
+        "Does not use emoji as the icon",
+        "Uses realistic, direct copy (not 'Oops!' or 'Nothing here!')",
+        "Provides TSX code"
+      ],
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Add a staggered fade-in animation to a list of transaction rows in Next.js.",
+      "expected_output": "Uses Framer Motion with staggerChildren. Each row fades up with spring physics. Parent and children in same client component tree. Performance-safe (transform + opacity only).",
+      "assertions": [
+        "Uses Framer Motion motion.div or motion.tr",
+        "Uses staggerChildren in parent variants",
+        "Each child has opacity 0→1 and translateY animation",
+        "Uses spring physics or cubic-bezier (not linear)",
+        "Parent and children in same 'use client' component",
+        "Only animates transform and opacity",
+        "Wraps in AnimatePresence if items can be added/removed"
+      ],
+      "files": []
+    }
+  ]
+}

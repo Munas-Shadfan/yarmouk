@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yarmouk AI — Integration Showcase</title>
+  <style>
+    :root {
+      --primary: #10a37f;
+      --primary-foreground: #ffffff;
+      --background: #f5f5f7;
+      --foreground: #1d1d1f;
+      --card: #ffffff;
+      --card-foreground: #1d1d1f;
+      --muted: #e9e9eb;
+      --muted-foreground: #86868b;
+      --border: rgba(0,0,0,0.08);
+      --radius-md: 10px;
+      --radius-xl: 20px;
+      --radius-2xl: 32px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 12px 32px rgba(0,0,0,0.08);
+      --glass: saturate(180%) blur(20px);
+    }
+    [data-theme="dark"] {
+      --background: #000000;
+      --foreground: #f5f5f7;
+      --card: #1c1c1e;
+      --card-foreground: #f5f5f7;
+      --muted: #2c2c2e;
+      --muted-foreground: #86868b;
+      --border: rgba(255,255,255,0.1);
+      --shadow-md: 0 12px 48px rgba(0,0,0,0.5);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --background: #000000; --foreground: #f5f5f7; --card: #1c1c1e; --card-foreground: #f5f5f7; --muted: #2c2c2e; --muted-foreground: #86868b; --border: rgba(255,255,255,0.1); --shadow-md: 0 12px 48px rgba(0,0,0,0.5);
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif; 
+      background: var(--background); color: var(--foreground); min-height: 100vh; 
+      transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar { 
+      display: flex; align-items: center; justify-content: space-between; 
+      padding: 12px 48px; position: sticky; top:0; z-index: 100;
+      border-bottom: 1px solid var(--border); 
+      background: rgba(var(--bg-rgb, 245, 245, 247), 0.72); 
+      backdrop-filter: var(--glass); -webkit-backdrop-filter: var(--glass);
+      transition: background 0.3s;
+    }
+    [data-theme="dark"] .topbar { --bg-rgb: 0, 0, 0; }
+    [data-theme="light"] .topbar { --bg-rgb: 245, 245, 247; }
+    
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-brand { font-size: 16px; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+    .topbar-link { font-size: 13.5px; color: var(--muted-foreground); text-decoration: none; font-weight: 600; }
+    .topbar-link:hover { color: var(--foreground); }
+
+    .theme-toggle {
+      background: none; border: none; cursor: pointer; color: var(--muted-foreground);
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px; border-radius: 50%; transition: background 0.2s;
+    }
+    .theme-toggle:hover { background: var(--border); color: var(--foreground); }
+
+    .hero { text-align: left; padding: 100px 24px 80px; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
+    @media (max-width: 900px) { .hero { grid-template-columns: 1fr; text-align: center; padding-top: 60px; } }
+    
+    .hero-eyebrow { display: inline-flex; align-items: center; gap: 7px; background: rgba(16,163,127,.1); border: 1px solid rgba(16,163,127,.25); color: var(--primary); font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 22px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+    .hero h1 { font-size: 64px; font-weight: 800; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.04em; }
+    .hero h1 span { color: var(--primary); }
+    .hero p { font-size: 20px; color: var(--muted-foreground); line-height: 1.5; font-weight: 500; max-width: 50ch; }
+    
+    .hero-visual { position: relative; width: 100%; display: flex; justify-content: flex-end; }
+    @media (max-width: 900px) { .hero-visual { display: none; } }
+
+    .bento-grid { 
+      max-width: 1100px; margin: 0 auto 100px; padding: 0 24px; 
+      display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; 
+    }
+    .card { 
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); 
+      box-shadow: var(--shadow-sm); overflow: hidden; display: flex; flex-direction: column; 
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s, border-color 0.3s;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+    
+    .card-large { grid-column: span 7; }
+    .card-medium { grid-column: span 5; }
+    .card-full { grid-column: span 12; display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    @media (max-width: 820px) { 
+        .card-large, .card-medium, .card-full { grid-column: span 12; }
+        .card-full { grid-template-columns: 1fr; }
+    }
+
+    .preview { height: 240px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .preview-1 { background: linear-gradient(135deg, #e8f8f3 0%, #d1f0e8 100%); }
+    .preview-2 { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); }
+    .preview-3 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+    [data-theme="dark"] .preview-1 { background: linear-gradient(135deg, #0d2e24, #0a2118); }
+    [data-theme="dark"] .preview-2 { background: linear-gradient(135deg, #1e1540, #160f38); }
+    [data-theme="dark"] .preview-3 { background: linear-gradient(135deg, #2a1f0a, #1f1607); }
+
+    .preview-ui { position: absolute; inset: 16px; border-radius: 12px; overflow: hidden; background: var(--card); border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,.15); display: flex; flex-direction: column; }
+    .pui-bar { height: 32px; background: var(--background); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 6px; }
+    .pui-dot { width: 8px; height: 8px; border-radius: 50%; opacity: 0.8; }
+    .pui-body { flex: 1; display: flex; overflow: hidden; }
+    .pui-sidebar-thin { width: 56px; background: var(--background); border-right: 1px solid var(--border); }
+    .pui-main { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .pui-line { height: 8px; background: var(--muted); border-radius: 4px; }
+    .pui-line.accent { background: rgba(16,163,127,.2); }
+    .pui-msg-user { align-self: flex-end; height: 24px; width: 60%; background: rgba(16,163,127,.15); border-radius: 8px; }
+    .pui-msg-ai { align-self: flex-start; height: 32px; width: 85%; background: var(--muted); border-radius: 8px; }
+    .pui-bubble { position: absolute; bottom: 20px; right: 20px; width: 32px; height: 32px; border-radius: 50%; background: #5436da; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(84,54,218,0.3); }
+    .pui-popup { position: absolute; bottom: 60px; right: 12px; width: 60%; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .pui-panel { width: 40%; background: var(--background); border-left: 1px solid var(--border); padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+    .card-body { padding: 32px; flex: 1; display: flex; flex-direction: column; }
+    .card-num { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 12px; }
+    .card-title { font-size: 24px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.02em; }
+    .card-desc { font-size: 15.5px; color: var(--muted-foreground); line-height: 1.6; flex: 1; }
+    .card-tags { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+    .tag { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--muted); color: var(--muted-foreground); }
+    .tag.green { color: #10a37f; border-color: rgba(16,163,127,0.2); background: rgba(16,163,127,0.06); }
+    .tag.purple { color: #5436da; border-color: rgba(84,54,218,0.2); background: rgba(84,54,218,0.06); }
+    .tag.amber { color: #d97706; border-color: rgba(217,119,6,0.2); background: rgba(217,119,6,0.06); }
+
+    .card-cta { display: block; margin-top: 24px; padding: 12px 0; border-radius: var(--radius-md); text-align: center; font-size: 15px; font-weight: 700; text-decoration: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    .card-cta:active { transform: scale(0.98); }
+    .cta-1 { background: var(--primary); color: #fff; }
+    .cta-2 { background: #5436da; color: #fff; }
+    .cta-3 { background: #d97706; color: #fff; }
+
+    /* ── MOBILE RESPONSIVENESS ── */
+    @media (max-width: 640px) {
+      .topbar { padding: 12px 24px; }
+      .hero h1 { font-size: 42px; }
+      .hero p { font-size: 17px; }
+      .tech-header h2 { font-size: 36px; }
+      .tech-header p { font-size: 16px; }
+      .tech-grid { gap: 32px; }
+      .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 500px; }
+      th, td { padding: 14px 16px; font-size: 13.5px; }
+    }
+    
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 36px; }
+      .bento-grid { gap: 16px; }
+      .card-body { padding: 24px; }
+    }
+
+    .tech-section { max-width: 1100px; margin: 0 auto 100px; padding: 0 24px; }
+    .tech-header { text-align: center; margin-bottom: 64px; }
+    .tech-header h2 { font-size: 48px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.04em; }
+    .tech-header p { color: var(--muted-foreground); font-size: 18px; font-weight: 500; }
+
+    .tech-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 64px; align-items: start; }
+    @media (max-width: 900px) { .tech-grid { grid-template-columns: 1fr; gap: 48px; } }
+    
+    .tech-info h3 { font-size: 26px; font-weight: 800; margin-bottom: 20px; color: var(--primary); letter-spacing: -0.02em; }
+    .tech-info p { font-size: 16px; color: var(--muted-foreground); line-height: 1.6; margin-bottom: 32px; }
+    .tech-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+    .tech-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; color: var(--foreground); line-height: 1.4; }
+    .tech-list li svg { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+
+    .table-container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-sm); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: var(--background); padding: 18px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-foreground); border-bottom: 1px solid var(--border); }
+    td { padding: 20px; font-size: 15px; border-bottom: 1px solid var(--border); line-height: 1.5; color: var(--foreground); }
+    tr:last-child td { border-bottom: none; }
+    .feat-name { font-weight: 700; }
+    .best-practice { color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 8px; font-family: -apple-system, sans-serif; }
+    .best-practice svg { width: 18px; height: 18px; flex-shrink: 0; }
+    
+    footer { border-top: 1px solid var(--border); padding: 64px 48px; text-align: center; color: var(--muted-foreground); font-size: 14px; }
+    footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-brand">Yarmouk AI</span>
+  <div class="topbar-right">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+      <svg id="sun-icon" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <a class="topbar-link" href="/admin">Admin dashboard &#8594;</a>
+  </div>
+</div>
+
+<div class="hero">
+  <div>
+    <div class="hero-eyebrow">
+      <span class="live-dot"></span>
+      All university demos are live
+    </div>
+    <h1>Three ways to integrate <span>Yarmouk AI</span></h1>
+    <p>A suite of premium integration patterns designed for university portals, faculty sites, and student dashboards.</p>
+  </div>
+  <div class="hero-visual">
+    <div class="preview preview-1" style="border-radius:24px; height:360px; width:440px; scale: 0.9;">
+        <div class="preview-ui" style="position:relative; transform: rotate(-3deg) translateY(20px);">
+             <div class="pui-bar">
+                <div class="pui-dot" style="background:#ff5f57"></div>
+                <div class="pui-dot" style="background:#ffbd2e"></div>
+                <div class="pui-dot" style="background:#28c840"></div>
+             </div>
+             <div class="pui-body">
+                <div class="pui-main">
+                    <div class="pui-msg-user" style="width:40%"></div>
+                    <div class="pui-msg-ai" style="height:80px"></div>
+                    <div class="pui-line accent" style="width:30%"></div>
+                </div>
+             </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="bento-grid">
+  <!-- 01 FULL SCREEN -->
+  <div class="card card-large">
+    <div class="preview preview-1">
+      <div class="preview-ui">
+        <div class="pui-bar">
+          <div class="pui-dot" style="background:#ff5f57"></div>
+          <div class="pui-dot" style="background:#ffbd2e"></div>
+          <div class="pui-dot" style="background:#28c840"></div>
+        </div>
+        <div class="pui-body">
+          <div class="pui-sidebar-thin"></div>
+          <div class="pui-main">
+            <div class="pui-line" style="width:70%"></div>
+            <div class="pui-msg-user"></div>
+            <div class="pui-msg-ai"></div>
+            <div class="pui-line accent" style="width:40%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="card-num">Pattern 01</div>
+      <div class="card-title">Full-screen chat portal</div>
+      <div class="card-desc">A dedicated AI environment with persistent conversation history and deep document search. Recommended for the primary student portal landing page.</div>
+      <div class="card-tags">
+        <span class="tag green">Institutional default</span>
+        <span class="tag">PostgreSQL history</span>
+      </div>
+      <a class="card-cta cta-1" href="/chat">Launch portal demo</a>
+    </div>
+  </div>
+
+  <!-- 02 FLOATING BOT -->
+  <div class="card card-medium">
+    <div class="preview preview-2">
+      <div class="preview-ui">
+        <div class="pui-bar">
+          <div class="pui-dot" style="background:#ff5f57"></div>
+          <div class="pui-dot" style="background:#ffbd2e"></div>
+          <div class="pui-dot" style="background:#28c840"></div>
+        </div>
+        <div class="pui-bubble">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="pui-popup">
+          <div class="pui-line" style="width:90%;margin-bottom:6px"></div>
+          <div class="pui-line" style="width:65%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="card-num">Pattern 02</div>
+      <div class="card-title">Floating support bubble</div>
+      <div class="card-desc">Embed directly into faculty sites or admission pages without occupying valuable layout real estate.</div>
+      <div class="card-tags">
+          <span class="tag purple">Non-intrusive</span>
+          <span class="tag">Global embed</span>
+      </div>
+      <a class="card-cta cta-2" href="/demo/floating">Launch bubble demo</a>
+    </div>
+  </div>
+
+  <!-- 03 COPILOT -->
+  <div class="card card-full">
+    <div class="preview preview-3" style="height:auto; min-height: 320px;">
+      <div class="preview-ui" style="inset: 32px;">
+        <div class="pui-bar">
+          <div class="pui-dot" style="background:#ff5f57"></div>
+          <div class="pui-dot" style="background:#ffbd2e"></div>
+          <div class="pui-dot" style="background:#28c840"></div>
+        </div>
+        <div class="pui-body">
+          <div class="pui-sidebar-thin"></div>
+          <div class="pui-main">
+            <div class="pui-line" style="width:55%"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+              <div class="pui-line" style="height:32px"></div>
+              <div class="pui-line" style="height:32px"></div>
+            </div>
+            <div class="pui-line" style="height:48px;width:100%"></div>
+          </div>
+          <div class="pui-panel">
+            <div class="pui-msg-ai" style="height:60px;width:100%"></div>
+            <div class="pui-msg-user" style="height:14px;width:80%"></div>
+            <div class="pui-msg-ai" style="height:40px;width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="card-num">Pattern 03</div>
+      <div class="card-title">Contextual sidebar copilot</div>
+      <div class="card-desc">The ultimate productivity integration. Docks to the right of student dashboards or researcher panels to provide context-aware assistance alongside active work. Supports suggested prompt chips and real-time document extraction.</div>
+      <div class="card-tags">
+        <span class="tag amber">Dashboard context</span>
+        <span class="tag green">High-productivity</span>
+      </div>
+      <a class="card-cta cta-3" style="width: fit-content; padding: 12px 40px;" href="/demo/copilot">Launch copilot demo</a>
+    </div>
+  </div>
+</div>
+
+<div class="tech-section">
+  <div class="tech-header">
+    <h2>Architecture & technology stack</h2>
+    <p>How Yarmouk AI delivers enterprise-grade performance and security.</p>
+  </div>
+  
+  <div class="tech-grid">
+    <div class="tech-info">
+      <h3>Stateful streaming agent</h3>
+      <p>The core of Yarmouk AI isn't just a simple chatbot; it's a <strong>LangGraph-powered AI agent</strong>. By moving beyond linear chains, we enable complex reasoning, tool usage, and cyclic logic.</p>
+      <ul class="tech-list">
+        <li>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>OAuth 2.0 security:</strong> The administration layer is secured with industry-standard JWT tokens and OAuth2 password flows.</span>
+        </li>
+        <li>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Token streaming:</strong> Responses are delivered character-by-character using Server-Sent Events (SSE) for zero perceived latency.</span>
+        </li>
+        <li>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>Atomic checkpoints:</strong> Every turn is saved as a durable checkpoint in PostgreSQL, allowing for perfect state recovery.</span>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Architecture feature</th>
+            <th>Traditional approach</th>
+            <th>Best practice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feat-name">Orchestration</td>
+            <td>Rigid chains</td>
+            <td class="best-practice">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              LangGraph Agent
+            </td>
+          </tr>
+          <tr>
+            <td class="feat-name">Persistence</td>
+            <td>In-memory</td>
+            <td class="best-practice">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              PostgreSQL
+            </td>
+          </tr>
+          <tr>
+            <td class="feat-name">Real-time UX</td>
+            <td>Batch results</td>
+            <td class="best-practice">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              SSE Streaming
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Built with FastAPI + LangGraph + GPT-5.4-mini &nbsp;&middot;&nbsp;
+  <a href="/admin">Admin dashboard &#8594;</a>
+</footer>
+
+<script>
+    const themeBtn = document.getElementById('theme-toggle');
+    const moonIcon = document.getElementById('moon-icon');
+    const sunIcon = document.getElementById('sun-icon');
+    
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+      if (theme === 'dark') {
+        moonIcon.classList.add('hidden');
+        sunIcon.classList.remove('hidden');
+      } else {
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+      }
+    }
+
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(savedTheme);
+
+    themeBtn.onclick = () => {
+      const current = document.documentElement.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      setTheme(current === 'dark' ? 'light' : 'dark');
+    };
+</script>
+
+</body>
+</html>

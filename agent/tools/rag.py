@@ -1,8 +1,62 @@
+"""
+RAG tool — semantic search over the Yarmouk University vector knowledge base.
+This is ALWAYS the first tool the agent calls. Live web access is a fallback only.
+"""
+from __future__ import annotations
+import logging
+
 from langchain_core.tools import tool
 
+from .knowledge_base import search_knowledge
+
+logger = logging.getLogger(__name__)
+
+
 @tool
-def rag_tool(query: str) -> str:
-    """Retrieve relevant information from a knowledge base based on the query."""
-    # This is a placeholder for the actual RAG/vector store retrieval logic
-    print(f"\n[RAG Tool] Retrieving information for query: {query}")
-    return f"Simulated retrieved context for: {query}\n- Document 1: LangGraph allows building stateful, streaming multi-actor applications.\n- Document 2: RAG enhances model responses with specifically retrieved facts."
+async def rag_tool(query: str) -> str:
+    """
+    Search the Yarmouk University knowledge base (vector database).
+
+    *** ALWAYS CALL THIS FIRST before any other tool. ***
+
+    The knowledge base contains pre-indexed, up-to-date content from ALL yu.edu.jo
+    pages and PDFs, including:
+      - Academic calendars and semester dates (admreg.yu.edu.jo)
+      - Admission and registration procedures
+      - Available majors and academic programs
+      - Graduation requirements and instructions
+      - University rules, regulations and bylaws
+      - Hussein bin Talal Library resources
+      - Queen Rania Center training courses and diplomas
+      - Job vacancies and scholarships (hr.yu.edu.jo)
+      - Staff contacts and phone directories
+      - University news and announcements
+
+    If the results have relevance ≥ 28%, use them to answer the user directly.
+    Only fall back to web_page_tool / pdf_extraction_tool when this tool returns
+    the "No relevant content found" message.
+
+    Args:
+        query: The user question or keywords (Arabic or English)
+    """
+    results = await search_knowledge(query, k=6)
+
+    if not results:
+        return (
+            "⚠️ KNOWLEDGE BASE MISS — no relevant content found for this query.\n"
+            "→ You MUST now call web_page_tool to fetch live content from yu.edu.jo.\n"
+            "Any content you scrape will be auto-indexed so future questions are answered instantly."
+        )
+
+    header = (
+        f"✅ KNOWLEDGE BASE HIT — {len(results)} relevant chunks found.\n"
+        f"🛑 STOP: Answer the user DIRECTLY from the chunks below. "
+        f"Do NOT call web_page_tool, pdf_extraction_tool, or tavily_tool.\n\n"
+    )
+    chunks = []
+    for i, r in enumerate(results, 1):
+        score_pct = int(r["score"] * 100)
+        chunks.append(
+            f"[{i}] {r['url']} ({r['type']}, relevance {score_pct}%)\n{r['content']}"
+        )
+    return header + "\n\n".join(chunks)

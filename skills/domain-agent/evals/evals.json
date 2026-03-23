@@ -1,0 +1,69 @@
+{
+  "skill_name": "domain-agent",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to let merchants attach their own domain to their store. How do I wire up the .NET API to call the domain agent and what DB table do I need?",
+      "expected_output": "Full flow: CustomDomains DB table, DomainAgentService C# class, POST /api/domains/attach endpoint that saves pending → calls agent → updates to ssl_pending → returns 202. Includes callback endpoint for when async SSL completes.",
+      "assertions": [
+        "Shows CustomDomains DB table with Status, SslStatus, StoreId, Domain columns",
+        "Shows DomainAgentService with ProvisionAsync method and X-Webhook-Secret header",
+        "Returns 202 Accepted immediately (not waiting for SSL)",
+        "Explains ssl_pending status and callback flow",
+        "Includes HttpClient registration in Program.cs"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The domain agent callback is hitting my .NET endpoint but I need to verify it's legit and update the domain record. Show me the controller.",
+      "expected_output": "DomainReadyController with FixedTimeEquals secret check on X-Agent-Secret header, parsing DomainReadyPayload, updating CustomDomain.Status + SslStatus + SslExpiry + VerifiedAt from the callback body.",
+      "assertions": [
+        "Uses CryptographicOperations.FixedTimeEquals for constant-time secret comparison",
+        "Reads X-Agent-Secret from header",
+        "Updates Status, SslStatus, SslExpiry, VerifiedAt on the domain record",
+        "Returns Unauthorized for bad secret",
+        "Returns Ok() on success"
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "A merchant added store.example.com but DNS isn't set up yet. What does the agent return and how should my API handle it?",
+      "expected_output": "Agent returns ok:false with message containing 'wrong_ip' or 'dns_error'. .NET should return 400 to merchant, keep domain status as 'pending', and suggest merchant updates their A record to SERVER_IP.",
+      "assertions": [
+        "Shows the agent JSON response shape with ok:false",
+        "Explains wrong_ip vs dns_error difference",
+        "Shows .NET returning 400 BadRequest to merchant",
+        "Domain stays in pending status in DB",
+        "Suggests merchant retry after DNS propagation"
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "How does nginx know which store to serve for a given domain? Does nginx look up the DB?",
+      "expected_output": "No — nginx passes Host header unchanged to the storefront app. The app reads Host header and queries CustomDomains table to find the matching Store. Shows nginx config snippet and C# middleware/filter for tenant resolution.",
+      "assertions": [
+        "Explains nginx passes Host $host unchanged",
+        "App resolves tenant from Host header, not nginx",
+        "Shows CustomDomains lookup by domain + status=active",
+        "Nginx config shows proxy_set_header Host $host",
+        "Does NOT suggest hardcoding store logic in nginx"
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Set up a Hangfire job to renew SSL certs automatically",
+      "expected_output": "RecurringJob calling DomainAgentService.RenewAllSslAsync every 12 hours via POST /ssl/renew-all. Includes registration in Program.cs.",
+      "assertions": [
+        "Uses RecurringJob.AddOrUpdate with Cron.HourInterval(12)",
+        "Calls DomainAgentService.RenewAllSslAsync",
+        "Shows Program.cs registration",
+        "Explains the agent internally runs certbot renew --non-interactive"
+      ],
+      "files": []
+    }
+  ]
+}

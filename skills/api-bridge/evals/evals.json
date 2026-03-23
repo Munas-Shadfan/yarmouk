@@ -1,0 +1,28 @@
+{
+  "skill_name": "api-bridge",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our team has an ASP.NET Core backend and an Angular frontend. We keep running into mismatched models when the API changes. Can you recommend a workflow or tools so the front end can automatically understand backend endpoints and we don\'t have to hand–rewrite fetch calls?",
+      "expected_output": "Explain the shared OpenAPI spec approach, mention existing skills to generate spec and TypeScript clients, and show a simple automation or shared folder.",
+      "assertions": [
+        "Mention OpenAPI or Swagger as the contract", 
+        "Reference generating clients (openapi-to-typescript or Orval)",
+        "Suggest storing spec in shared folder and watching for changes",
+        "Optionally point to api integration specialist for templates"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I heard about Orval – how does it fit into making the frontend and backend talk to each other? We're using Angular on the client and .NET on the server.",
+      "expected_output": "Describe how Orval takes an OpenAPI spec, generates Angular/TypeScript HTTP wrappers, and recommend generating spec from .NET backend; mention placing spec where both sides see it.",
+      "assertions": [
+        "Explain Orval is a client generator", 
+        "Tie it to an OpenAPI spec produced by backend", 
+        "Mention the shared folder/contract-first workflow"
+      ],
+      "files": []
+    }
+  ]
+}

@@ -28,12 +28,20 @@ def tavily_tool(query: str) -> str:
         results = _tavily.invoke({"query": query})
         if not results:
             return "No results found on yu.edu.jo for that query."
-        # Format as a numbered list for readability
+
+        # Newer langchain_tavily versions return a pre-formatted string directly
+        if isinstance(results, str):
+            return results
+
+        # Older versions return a list — elements may be dicts or plain strings
         lines = []
         for i, r in enumerate(results, 1):
-            url = r.get("url", "")
-            content = r.get("content", "").strip()
-            lines.append(f"{i}. {url}\n   {content}")
+            if isinstance(r, dict):
+                url     = r.get("url", "")
+                content = r.get("content", "").strip()
+                lines.append(f"{i}. {url}\n   {content}")
+            else:
+                lines.append(f"{i}. {r}")
         return "\n\n".join(lines)
     except Exception as e:
         logger.exception("Tavily search failed")

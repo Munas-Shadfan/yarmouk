@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yarmouk University — Computer Science</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary: #10a37f;
+      --primary-foreground: #ffffff;
+      --background: #f5f5f7;
+      --foreground: #1d1d1f;
+      --card: #ffffff;
+      --card-foreground: #1d1d1f;
+      --muted: #e9e9eb;
+      --muted-foreground: #86868b;
+      --border: rgba(0,0,0,0.08);
+      --radius-md: 10px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 12px 32px rgba(0,0,0,0.08);
+      --glass: saturate(180%) blur(20px);
+    }
+    [data-theme="dark"] {
+      --background: #000000;
+      --foreground: #f5f5f7;
+      --card: #1c1c1e;
+      --card-foreground: #f5f5f7;
+      --muted: #2c2c2e;
+      --muted-foreground: #86868b;
+      --border: rgba(255,255,255,0.1);
+      --shadow-md: 0 12px 48px rgba(0,0,0,0.5);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --background: #000000; --foreground: #f5f5f7; --card: #1c1c1e; --card-foreground: #f5f5f7; --muted: #2c2c2e; --muted-foreground: #86868b; --border: rgba(255,255,255,0.1); --shadow-md: 0 12px 48px rgba(0,0,0,0.5);
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif; 
+      background: var(--background); color: var(--foreground); min-height: 100vh; 
+      transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(var(--nav-bg-rgb, 245, 245, 247), 0.72);
+      backdrop-filter: var(--glass); -webkit-backdrop-filter: var(--glass);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px; height: 60px;
+      display: flex; align-items: center; gap: 32px;
+      transition: background 0.3s;
+    }
+    [data-theme="dark"] nav { --nav-bg-rgb: 0, 0, 0; }
+    [data-theme="light"] nav { --nav-bg-rgb: 245, 245, 247; }
+    
+    .nav-logo { font-size: 16px; font-weight: 800; color: var(--primary); }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-link  { font-size: 14px; color: var(--muted-foreground); text-decoration: none; cursor: pointer; font-weight: 500; }
+    .nav-link:hover { color: var(--foreground); }
+    .nav-link.active { color: var(--foreground); font-weight: 600; }
+    .nav-cta { margin-left: 0; background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    
+    .theme-toggle {
+      margin-left: auto; background: none; border: none; cursor: pointer; color: var(--muted-foreground);
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px; border-radius: 50%; transition: background 0.2s;
+    }
+    .theme-toggle:hover { background: var(--border); color: var(--foreground); }
+    .hidden { display: none !important; }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 1100px; margin: 0 auto;
+      padding: 80px 48px 64px;
+      display: grid; grid-template-columns: 1fr 420px; gap: 64px; align-items: center;
+    }
+    .hero-tag { font-size: 12px; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+    .hero-h1  { font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -0.03em; }
+    .hero-p   { font-size: 18px; color: var(--muted-foreground); line-height: 1.6; margin-bottom: 32px; max-width: 50ch; }
+    .hero-actions { display: flex; gap: 12px; }
+    .btn-primary { background: var(--primary); color: #fff; border: none; border-radius: 10px; padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+    .btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); border-radius: 10px; padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .hero-img-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+      box-shadow: var(--shadow-md); padding: 24px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .stat-row { display: flex; gap: 16px; }
+    .stat-card { flex: 1; background: var(--background); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .stat-num  { font-size: 32px; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+    .stat-lbl  { font-size: 13px; color: var(--muted-foreground); margin-top: 4px; font-weight: 500; }
+    .promo-banner { background: rgba(16,163,127,0.06); border: 1px solid rgba(16,163,127,0.15); border-radius: 12px; padding: 14px; font-size: 14px; color: var(--muted-foreground); }
+
+    /* ── CONTENT GRID ── */
+    .section { max-width: 1100px; margin: 0 auto; padding: 0 48px 80px; }
+    .section-title { font-size: 28px; font-weight: 800; margin-bottom: 32px; letter-spacing: -0.02em; }
+    .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 32px; box-shadow: var(--shadow-sm); transition: transform 0.3s;
+    }
+    .card:hover { transform: translateY(-4px); }
+    .card-icon { font-size: 32px; margin-bottom: 16px; }
+    .card h3 { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+    .card p  { font-size: 15px; color: var(--muted-foreground); line-height: 1.6; }
+    .card-link { display: inline-block; margin-top: 16px; font-size: 14px; color: var(--primary); font-weight: 700; cursor: pointer; }
+
+    /* ── FLOATING CHAT ── */
+    #float-bubble {
+      position: fixed; bottom: 32px; right: 32px; z-index: 1000;
+      width: 60px; height: 60px; border-radius: 50%;
+      background: #5436da; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 32px rgba(84,54,218,.4);
+      transition: transform .2s, box-shadow .2s;
+    }
+    #float-bubble:hover { transform: scale(1.08); box-shadow: 0 10px 40px rgba(84,54,218,.5); }
+    #float-badge {
+      position: absolute; top: -2px; right: -2px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #ff3b30; border: 2px solid var(--background);
+      font-size: 11px; font-weight: 800; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    #float-window {
+      position: fixed; bottom: 104px; right: 32px; z-index: 999;
+      width: 380px; height: 540px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; box-shadow: 0 20px 64px rgba(0,0,0,.2);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform-origin: bottom right;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+    }
+    #float-window.hidden { transform: scale(0.85); opacity: 0; pointer-events: none; }
+
+    .fw-header {
+      background: #5436da; padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .fw-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .fw-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .fw-sub   { font-size: 12px; color: rgba(255,255,255,.75); display: flex; align-items: center; gap: 6px; }
+    .online-dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; }
+    .fw-close {
+      margin-left: auto; background: transparent; border: none;
+      color: rgba(255,255,255,.8); cursor: pointer; padding: 6px;
+      border-radius: 8px; display: flex; align-items: center;
+    }
+    .fw-close:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+    .fw-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .fw-msg { display: flex; gap: 10px; align-items: flex-end; }
+    .fw-msg.user { flex-direction: row-reverse; }
+    .fw-av {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+    }
+    .fw-av.ai  { background: #5436da; color: #fff; }
+    .fw-av.usr { background: var(--foreground); color: var(--background); }
+    .fw-bubble {
+      max-width: 82%; padding: 12px 16px; border-radius: 16px;
+      font-size: 14.5px; line-height: 1.5;
+    }
+    .fw-msg.ai   .fw-bubble { background: var(--background); color: var(--foreground); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+    .fw-msg.user .fw-bubble { background: #5436da; color: #fff; border-bottom-right-radius: 4px; }
+
+    .tool-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 20px; margin-bottom: 8px;
+      font-size: 11.5px; font-weight: 600;
+      color: #5436da; background: rgba(84,54,218,.06);
+      border: 1px solid rgba(84,54,218,.15);
+    }
+
+    .fw-input-row {
+      border-top: 1px solid var(--border); padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      background: var(--card);
+    }
+    .fw-input {
+      flex: 1; border: 1px solid var(--border); border-radius: 12px;
+      padding: 10px 14px; font-size: 14px;
+      background: var(--background); color: var(--foreground); border: 1.5px solid var(--border); outline: none; transition: border-color 0.2s;
+    }
+    .fw-input:focus { border-color: #5436da; }
+    .fw-send {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: #5436da; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+
+    /* ── MOBILE RESPONSIVENESS ── */
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; position: fixed; top: 60px; left: 0; right: 0; background: var(--card); flex-direction: column; padding: 24px; gap: 16px; border-bottom: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+      .nav-links.open { display: flex; }
+      .nav-cta { display: none; }
+      #nav-menu-toggle { display: block !important; }
+      .hero { grid-template-columns: 1fr; padding-top: 40px; text-align: center; }
+      .hero-p { margin: 0 auto 32px; }
+      .hero-actions { justify-content: center; }
+      .card-grid { grid-template-columns: 1fr; }
+      #float-window { width: calc(100% - 40px); height: calc(100% - 140px); right: 20px; bottom: 100px; max-height: 500px; }
+    }
+    #nav-menu-toggle {
+        display: none; background: none; border: none; cursor: pointer; color: var(--foreground);
+    }
+  </style>
+</head>
+<body>
+
+
+
+<nav>
+  <span class="nav-logo">Yarmouk University</span>
+  <div class="nav-links">
+    <a class="nav-link active">Academics</a>
+    <a class="nav-link">Admissions</a>
+    <a class="nav-link">Research</a>
+    <a class="nav-link">Campus Life</a>
+  </div>
+  <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+    <svg id="sun-icon" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg id="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+  <button class="nav-cta">Apply Now</button>
+</nav>
+
+<div class="hero">
+  <div>
+    <div class="hero-tag">Faculty of Science & Technology</div>
+    <h1 class="hero-h1">Computer Science at Yarmouk</h1>
+    <p class="hero-p">Equipping Jordan's next generation of tech leaders with cutting-edge skills in Artificial Intelligence and Software Engineering.</p>
+    <div class="hero-actions">
+      <button class="btn-primary">Explore Programs</button>
+      <button class="btn-outline">View Curriculum</button>
+    </div>
+  </div>
+  <div class="hero-img-box">
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-num">1,240</div><div class="stat-lbl">Students</div></div>
+      <div class="stat-card"><div class="stat-num">94%</div><div class="stat-lbl">Employment</div></div>
+    </div>
+    <div class="promo-banner">
+      🎓 Applications for 2025/26 now open.
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Programs Offered</div>
+  <div class="card-grid">
+    <div class="card"><div class="card-icon">💻</div><h3>B.Sc. Computer Science</h3><p>Accredited 4-year program.</p><span class="card-link">Learn more →</span></div>
+    <div class="card"><div class="card-icon">🤖</div><h3>M.Sc. AI</h3><p>Research-focused graduate study.</p><span class="card-link">Learn more →</span></div>
+    <div class="card"><div class="card-icon">🔐</div><h3>B.Sc. Cybersecurity</h3><p>Defense-focused engineering.</p><span class="card-link">Learn more →</span></div>
+  </div>
+</div>
+
+<button id="float-bubble" onclick="toggleChat()" aria-label="Open AI assistant">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <div id="float-badge">1</div>
+</button>
+
+<div id="float-window" class="hidden">
+  <div class="fw-header">
+    <div class="fw-avatar">🎓</div>
+    <div><div class="fw-title">Yarmouk Assistant</div><div class="fw-sub"><span class="online-dot"></span>Online • Replies instantly</div></div>
+    <button class="fw-close" onclick="toggleChat()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="fw-messages" id="fw-msgs">
+    <div class="fw-msg ai"><div class="fw-av ai">AI</div><div class="fw-bubble">👋 Hi! I'm the Yarmouk University assistant. How can I help you today?</div></div>
+    <div id="fw-typing" style="display:none" class="fw-msg ai"><div class="fw-av ai">AI</div><div class="fw-bubble" id="fw-ai-bubble"></div></div>
+  </div>
+  <div class="fw-input-row">
+    <input class="fw-input" id="fw-input" type="text" placeholder="Type a message…" />
+    <button class="fw-send" id="fw-send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+  </div>
+</div>
+
+<script>
+marked.setOptions({ breaks: true, gfm: true });
+const THREAD = 'demo_float_' + Math.floor(Date.now() / 60000);
+let isOpen = false, isReceiving = false;
+
+function toggleChat() {
+  isOpen = !isOpen;
+  document.getElementById('float-window').classList.toggle('hidden', !isOpen);
+  document.getElementById('float-badge').style.display = isOpen ? 'none' : 'flex';
+  if (isOpen) document.getElementById('fw-input').focus();
+}
+
+async function sendMsg() {
+  if (isReceiving) return;
+  const input = document.getElementById('fw-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  
+  const msgs = document.getElementById('fw-msgs');
+  const typing = document.getElementById('fw-typing');
+  const usrEl = document.createElement('div');
+  usrEl.className = 'fw-msg user';
+  usrEl.innerHTML = `<div class="fw-av usr">U</div><div class="fw-bubble">${q}</div>`;
+  msgs.insertBefore(usrEl, typing);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  isReceiving = true;
+  typing.style.display = 'flex';
+  const bubbleEl = document.getElementById('fw-ai-bubble');
+  bubbleEl.textContent = 'Thinking…';
+
+  let rawText = '', inThinking = true;
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ query: q, thread_id: THREAD })
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunks = decoder.decode(value).split('\n\n');
+      for (const chunk of chunks) {
+          if (!chunk.startsWith('data: ')) continue;
+          const ev = JSON.parse(chunk.slice(6));
+          if (ev.type === 'token') {
+              if (inThinking) { bubbleEl.innerHTML = ''; inThinking = false; }
+              rawText += ev.text;
+              bubbleEl.innerHTML = marked.parse(rawText);
+              msgs.scrollTop = msgs.scrollHeight;
+          }
+      }
+    }
+  } catch(e) {}
+  
+  const perm = document.createElement('div');
+  perm.className = 'fw-msg ai';
+  perm.innerHTML = `<div class="fw-av ai">AI</div><div class="fw-bubble">${bubbleEl.innerHTML}</div>`;
+  msgs.insertBefore(perm, typing);
+  typing.style.display = 'none';
+  isReceiving = false;
+}
+
+document.getElementById('fw-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+document.getElementById('fw-send').onclick = sendMsg;
+
+const toggleBtn = document.getElementById('theme-toggle');
+const moonIcon = document.getElementById('moon-icon');
+const sunIcon = document.getElementById('sun-icon');
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  if (theme === 'dark') { moonIcon.classList.add('hidden'); sunIcon.classList.remove('hidden'); }
+  else { sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); }
+}
+const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(savedTheme);
+toggleBtn.onclick = () => { setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); };
+
+setTimeout(() => { if (!isOpen) toggleChat(); }, 2000);
+</script>
+</body>
+</html>

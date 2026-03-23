@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Full-Screen Chat Demo — Yarmouk AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary: #10a37f;
+      --primary-foreground: #ffffff;
+      --background: #f5f5f7;
+      --foreground: #1d1d1f;
+      --card: #ffffff;
+      --card-foreground: #1d1d1f;
+      --muted: #e9e9eb;
+      --muted-foreground: #86868b;
+      --border: rgba(0,0,0,0.08);
+      --radius-md: 10px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 12px 32px rgba(0,0,0,0.08);
+      --glass: saturate(180%) blur(20px);
+      --sidebar: #f5f5f7;
+    }
+    [data-theme="dark"] {
+      --background: #000000;
+      --foreground: #f5f5f7;
+      --card: #1c1c1e;
+      --card-foreground: #f5f5f7;
+      --muted: #2c2c2e;
+      --muted-foreground: #86868b;
+      --border: rgba(255,255,255,0.1);
+      --shadow-md: 0 12px 48px rgba(0,0,0,0.5);
+      --sidebar: #0a0a0a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --background: #000000; --foreground: #f5f5f7; --card: #1c1c1e; --card-foreground: #f5f5f7; --muted: #2c2c2e; --muted-foreground: #86868b; --border: rgba(255,255,255,0.1); --shadow-md: 0 12px 48px rgba(0,0,0,0.5); --sidebar: #0a0a0a;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+      background: var(--background); color: var(--foreground);
+      display: flex; height: 100vh; overflow: hidden;
+      transition: background 0.3s;
+      -webkit-font-smoothing: antialiased;
+    }
+
+
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 260px; min-width: 260px;
+      background: var(--sidebar); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+      padding-top: 0;
+    }
+    .sidebar-header {
+      padding: 24px 20px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo {
+      width: 32px; height: 32px; border-radius: 10px;
+      background: var(--primary); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sidebar-title { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; }
+    .sidebar-subtitle { font-size: 11px; color: var(--muted-foreground); font-weight: 500; }
+
+    .new-chat-btn {
+      margin: 16px; padding: 12px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.2s;
+    }
+    .new-chat-btn:hover { opacity: 0.9; }
+
+    .sessions-label {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--muted-foreground); padding: 12px 20px 8px;
+    }
+    .sessions-list { flex: 1; overflow-y: auto; padding: 0 12px; }
+    .session-item {
+      padding: 10px 12px; border-radius: 10px; cursor: pointer;
+      font-size: 14px; color: var(--muted-foreground); font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: all 0.2s;
+    }
+    .session-item:hover { background: var(--border); color: var(--foreground); }
+    .session-item.active { background: rgba(16,163,127,.1); color: var(--primary); font-weight: 700; }
+
+    .sidebar-footer {
+      padding: 16px 20px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .theme-toggle {
+      background: none; border: none; cursor: pointer; color: var(--muted-foreground);
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px; border-radius: 50%; transition: background 0.2s;
+    }
+    .theme-toggle:hover { background: var(--border); color: var(--foreground); }
+    .hidden { display: none !important; }
+
+    /* ── CHAT AREA ── */
+    .chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-top: 0; }
+    .chat-topbar { padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--card); display: flex; align-items: center; justify-content: space-between; }
+    .chat-topbar-title { font-size: 16px; font-weight: 800; }
+    .online-pill { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--muted-foreground); background: var(--background); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; }
+    .online-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+
+    .messages { flex: 1; overflow-y: auto; padding: 40px 0; }
+    .message-row { display: flex; gap: 16px; padding: 12px 32px; max-width: 900px; margin: 0 auto; width: 100%; }
+    .message-row.user { flex-direction: row-reverse; }
+    .avatar { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
+    .avatar.ai { background: var(--primary); color: #fff; }
+    .avatar.user { background: var(--muted); color: var(--muted-foreground); }
+    .bubble { max-width: 75%; padding: 16px 20px; border-radius: 18px; font-size: 15px; line-height: 1.6; }
+    .bubble.user { background: var(--muted); border-bottom-right-radius: 4px; }
+    .bubble.ai { background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-sm); border-bottom-left-radius: 4px; }
+
+    .input-area { padding: 24px 32px 32px; border-top: 1px solid var(--border); background: var(--card); }
+    .input-wrap { display: flex; gap: 12px; align-items: flex-end; max-width: 900px; margin: 0 auto; background: var(--background); border: 2px solid var(--border); border-radius: 18px; padding: 12px; transition: border-color 0.2s; }
+    .input-wrap:focus-within { border-color: var(--primary); }
+    .input-wrap textarea { flex: 1; border: none; outline: none; resize: none; background: transparent; color: var(--foreground); font-size: 15px; line-height: 1.5; max-height: 200px; font-family: inherit; }
+    .send-btn { width: 40px; height: 40px; border-radius: 12px; background: var(--primary); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+
+    /* ── MOBILE RESPONSIVENESS ── */
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; left: -260px; top: 0; bottom: 0; transition: transform 0.3s; z-index: 100; box-shadow: 20px 0 60px rgba(0,0,0,0.2); }
+      .sidebar.open { transform: translateX(260px); }
+      .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; display: none; }
+      .sidebar-overlay.open { display: block; }
+      .chat-topbar { padding: 12px 16px 12px 60px; }
+      #fs-menu-toggle { display: block !important; }
+      .message-row { padding: 10px 16px; gap: 12px; }
+      .bubble { max-width: 85%; padding: 12px 16px; font-size: 14.5px; }
+      .input-area { padding: 16px; }
+    }
+    #fs-menu-toggle {
+        display: none; position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; cursor: pointer; color: var(--foreground);
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <div><div class="sidebar-title">Yarmouk AI</div><div class="sidebar-subtitle">University Assistant</div></div>
+  </div>
+  <button class="new-chat-btn">New Conversation</button>
+  <div class="sessions-label">Recent History</div>
+  <div class="sessions-list" id="sessionsList"><div class="session-item active">Current Chat</div></div>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+      <svg id="sun-icon" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="chat-area">
+  <div class="chat-topbar">
+    <button id="fs-menu-toggle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <div class="chat-topbar-title">University Assistant</div><div class="online-pill"><span class="online-dot"></span>Online</div></div>
+  <div class="messages" id="messages"></div>
+  <div class="input-area"><div class="input-wrap"><textarea id="userInput" placeholder="Ask anything..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea><button class="send-btn" id="sendBtn" onclick="sendMessage()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>
+</div>
+
+<script>
+marked.setOptions({ breaks: true, gfm: true });
+const THREAD = 'demo_fs_' + Math.floor(Date.now() / 60000);
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('userInput');
+let isReceiving = false;
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isReceiving) return;
+  inputEl.value = ''; inputEl.style.height = 'auto';
+  
+  const usrRow = document.createElement('div');
+  usrRow.className = 'message-row user';
+  usrRow.innerHTML = `<div class="avatar user">U</div><div class="bubble user">${text}</div>`;
+  messagesEl.appendChild(usrRow);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  isReceiving = true;
+  const aiRow = document.createElement('div');
+  aiRow.className = 'message-row';
+  aiRow.innerHTML = `<div class="avatar ai">Y</div><div class="bubble ai" id="stream">Thinking...</div>`;
+  messagesEl.appendChild(aiRow);
+  const streamEl = document.getElementById('stream');
+
+  let rawMd = '';
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: text, thread_id: THREAD })
+    });
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunks = dec.decode(value).split('\n\n');
+      for (const chunk of chunks) {
+          if (!chunk.startsWith('data: ')) continue;
+          const ev = JSON.parse(chunk.slice(6));
+          if (ev.type === 'token') {
+              rawMd += ev.text;
+              streamEl.innerHTML = marked.parse(rawMd);
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+      }
+    }
+  } catch (err) {}
+  streamEl.id = '';
+  isReceiving = false;
+}
+
+inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+const toggleBtn = document.getElementById('theme-toggle');
+const moonIcon = document.getElementById('moon-icon');
+const sunIcon = document.getElementById('sun-icon');
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  if (theme === 'dark') { moonIcon.classList.add('hidden'); sunIcon.classList.remove('hidden'); }
+  else { sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); }
+}
+const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(savedTheme);
+toggleBtn.onclick = () => { setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); };
+
+const fsMenuBtn = document.getElementById('fs-menu-toggle');
+const fsSidebar = document.querySelector('.sidebar');
+const fsOverlay = document.getElementById('sidebar-overlay');
+function toggleFsSidebar() { fsSidebar.classList.toggle('open'); fsOverlay.classList.toggle('open'); }
+if (fsMenuBtn) fsMenuBtn.onclick = toggleFsSidebar;
+if (fsOverlay) fsOverlay.onclick = toggleFsSidebar;
+</script>
+</body>
+</html>

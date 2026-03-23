@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from typing import TypedDict, Annotated
-from google.genai.errors import ClientError
 from dotenv import load_dotenv
 
 # Ensure environment variables (.env) are loaded up front
@@ -14,22 +13,25 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 from .tools.rag import rag_tool
 from .tools.search import tavily_tool
+from .tools.pdf_extractor import pdf_extraction_tool
+from .tools.web_scraper import web_page_tool
+from .tools.unanswered import save_unanswered_question
 from .prompts import AGENT_SYSTEM_PROMPT
 
 class AgentState(TypedDict):
     """The current state of the agent."""
     messages: Annotated[list[BaseMessage], add_messages]
 
-# Define the tools array including both RAG and Tavily
-tools = [rag_tool, tavily_tool]
+# Define the tools array including RAG, Tavily, PDF extraction, and unanswered question saver
+tools = [rag_tool, tavily_tool, web_page_tool, pdf_extraction_tool, save_unanswered_question]
 tool_node = ToolNode(tools)
 
-# Initialize the Gemini model
-model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0).bind_tools(tools)
+# Initialize the OpenAI model (gpt-5.4-mini: fast, cost-effective, supports tool calls)
+model = ChatOpenAI(model="gpt-5.4-mini", temperature=0).bind_tools(tools)
 
 # System message singleton — defined once and prepended only when missing
 _SYSTEM_MSG = SystemMessage(content=AGENT_SYSTEM_PROMPT)
@@ -62,50 +64,45 @@ def compile_graph(checkpointer=None):
     # Compile into a runnable graph with the provided memory checkpointer
     return builder.compile(checkpointer=checkpointer)
 
-# Streaming generator function
+# Human-readable labels for each tool the agent can call
+_TOOL_LABELS: dict[str, str] = {
+    "tavily_tool": "Searching Yarmouk University website…",
+    "rag_tool": "Retrieving from knowledge base…",
+    "web_page_tool": "Reading university web page…",
+    "pdf_extraction_tool": "Extracting PDF document…",
+    "save_unanswered_question": "Logging unanswered question…",
+}
+
+
 async def stream_agent(graph, query: str, thread_id: str):
-    """Stream the responses from the agent via astream_events using REST yielding chunks."""
+    """Yield structured SSE events: {type, label|text} dicts."""
     inputs = {"messages": [HumanMessage(content=query)]}
-    
-    # Send the thread_id config and enforcing the 20 steps recursion limit
     config = {
         "configurable": {"thread_id": thread_id},
-        "recursion_limit": 20
+        "recursion_limit": 20,
     }
-    
+
     try:
-        # Streaming both tool events and model output tokens
         async for event in graph.astream_events(inputs, config=config, version="v2"):
             kind = event["event"]
 
-            # Show a single friendly status pill while any tool is running
             if kind == "on_tool_start":
-                logger.info("Tool started: %s", event["name"])
-                yield "[SYSTEM_STATUS] Thinking…\n"
+                tool_name = event.get("name", "")
+                label = _TOOL_LABELS.get(tool_name, f"Running {tool_name}…")
+                logger.info("Tool started: %s", tool_name)
+                yield {"type": "status", "label": label}
 
             elif kind == "on_tool_end":
-                logger.info("Tool finished: %s", event["name"])
-                # Intentionally silent — no extra pill on completion
+                logger.info("Tool finished: %s", event.get("name", ""))
+                # Return to generic thinking state between tool calls
+                yield {"type": "status", "label": "Thinking…"}
 
-            # Stream individual LLM output tokens
             elif kind == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
-                # content can be str or list (tool-use chunks) — only yield plain text
                 content = chunk.content
                 if isinstance(content, str) and content:
-                    yield content
+                    yield {"type": "token", "text": content}
 
-    except ClientError as e:
-        if e.code == 429:
-            logger.warning("Gemini API rate limit hit: %s", e)
-            yield (
-                "⚠️ **API rate limit reached.** The free-tier daily quota for this "
-                "model has been exhausted. Please wait until the quota resets (usually "
-                "midnight Pacific time) or upgrade to a paid plan."
-            )
-        else:
-            logger.exception("Gemini API client error")
-            yield f"❌ **API error ({e.code}):** {e}"
     except Exception as e:
         logger.exception("Unexpected error during agent stream")
-        yield f"❌ **Unexpected error:** {e}"
+        yield {"type": "error", "text": f"❌ Unexpected error: {e}"}

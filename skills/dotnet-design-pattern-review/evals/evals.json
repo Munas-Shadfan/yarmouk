@@ -1,0 +1,28 @@
+{
+  "skill_name": "dotnet-design-pattern-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a C# project with a CommandHandler base class and a few services injected via constructor. Can you review the code for design patterns (Command, Factory, Repository) and suggest improvements without changing any code?",
+      "expected_output": "A clear review that identifies which patterns are used, notes any missing patterns or anti-patterns, and gives actionable recommendations (e.g., improve DI usage, validate input, simplify factory logic).",
+      "assertions": [
+        "Mentions Command Pattern or Command Handler.",
+        "Mentions Dependency Injection or constructor injection.",
+        "Does not modify or rewrite the provided code.",
+        "Provides at least one actionable improvement suggestion."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We have a repository class that directly creates database connections instead of using DI. Please review for best practices and design patterns, focusing on maintainability and testability.",
+      "expected_output": "A review that points out the direct connection creation, suggests using DI/service abstractions for repositories, and evaluates relevant patterns (Repository, Provider, DI).",
+      "assertions": [
+        "Mentions Repository Pattern or DI.",
+        "Recommends avoiding hard-coded connection creation.",
+        "Keeps the answer in review mode (no code changes)."
+      ],
+      "files": []
+    }
+  ]
+}
