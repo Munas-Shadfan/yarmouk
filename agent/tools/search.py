@@ -33,7 +33,15 @@ def tavily_tool(query: str) -> str:
         if isinstance(results, str):
             return results
 
-        # Older versions return a list — elements may be dicts or plain strings
+        # If it returns a dictionary with a 'results' key, extract it
+        if isinstance(results, dict) and "results" in results:
+            results = results["results"]
+
+        # If results is still a dict but not the above, it's problematic
+        if isinstance(results, dict):
+            return f"Search result keys: {list(results.keys())}\n(Did not find a 'results' list)"
+
+        # Iterate over the list — elements may be dicts or plain strings
         lines = []
         for i, r in enumerate(results, 1):
             if isinstance(r, dict):

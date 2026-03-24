@@ -51,7 +51,14 @@ async def lifespan(app: FastAPI):
         min_size=1,
         max_size=10,
         open=False,
-        kwargs={"autocommit": True},
+        reconnect_timeout=30,
+        kwargs={
+            "autocommit": True,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        },
     )
 
     # Separate pool for knowledge base (RAG search + save) — avoids
@@ -62,7 +69,14 @@ async def lifespan(app: FastAPI):
         min_size=2,
         max_size=10,
         open=False,
-        kwargs={"autocommit": True},
+        reconnect_timeout=30,
+        kwargs={
+            "autocommit": True,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        },
     )
 
     try:

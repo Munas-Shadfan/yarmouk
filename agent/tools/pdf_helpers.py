@@ -110,7 +110,12 @@ KEY_PAGES: dict[str, dict] = {
     "main_home": {
         "url": "https://www.yu.edu.jo/",
         "desc": "Main university homepage — news, events, quick links",
-        "keywords": ["home", "yarmouk", "university", "جامعة", "اليرموك"],
+        "keywords": ["home", "yarmouk", "university", "جامعة", "اليرموك", "رئيس"],
+    },
+    "president_page": {
+        "url": "https://www.yu.edu.jo/index.php/home-ar/university-presidency-ar",
+        "desc": "President's word and office information",
+        "keywords": ["president", "word", "office", "رئيس", "كلمة", "مالك الشرايري"],
     },
     "student_portal": {
         "url": "https://www.yu.edu.jo/index.php/ar/studentar",
@@ -253,6 +258,10 @@ def route_query(query: str) -> dict[str, list[str]]:
     # News / announcements
     if any(w in q for w in ["news", "announcement", "event", "اخبار", "اعلان", "فعالية"]):
         pages += [KEY_PAGES["news_events"]["url"], KEY_PAGES["announcements"]["url"]]
+
+    # President
+    if any(w in q for w in ["president", "رئيس"]):
+        pages += [KEY_PAGES["president_page"]["url"]]
 
     # Contact / phone / staff
     if any(w in q for w in ["phone", "contact", "email", "staff", "هاتف", "بريد"]):

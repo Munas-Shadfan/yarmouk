@@ -48,15 +48,12 @@ async def rag_tool(query: str) -> str:
             "Any content you scrape will be auto-indexed so future questions are answered instantly."
         )
 
-    header = (
-        f"✅ KNOWLEDGE BASE HIT — {len(results)} relevant chunks found.\n"
-        f"🛑 STOP: Answer the user DIRECTLY from the chunks below. "
-        f"Do NOT call web_page_tool, pdf_extraction_tool, or tavily_tool.\n\n"
-    )
+    header = f"Found {len(results)} relevant knowledge chunks:\n\n"
     chunks = []
     for i, r in enumerate(results, 1):
         score_pct = int(r["score"] * 100)
         chunks.append(
-            f"[{i}] {r['url']} ({r['type']}, relevance {score_pct}%)\n{r['content']}"
+            f"Source [{i}]: {r['url']} ({r['type']}, relevance {score_pct}%)\n"
+            f"Content: {r['content']}\n---"
         )
-    return header + "\n\n".join(chunks)
+    return header + "\n".join(chunks)
